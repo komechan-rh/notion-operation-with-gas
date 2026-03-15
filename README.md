@@ -1,7 +1,7 @@
 # Notion Operation with GAS
 
 Google Apps Script (GAS) を使って Notion API を操作するスクリプトです。
-ページのプロパティ更新・コンテンツ追記・データベースへのページ追加などの基本操作を提供します。
+TypeScript + pnpm + biome + vitest + clasp によるテンプレートをベースに構築しています。
 
 ---
 
@@ -10,12 +10,21 @@ Google Apps Script (GAS) を使って Notion API を操作するスクリプト�
 ```
 .
 ├── appsscript.json          # GAS プロジェクト設定
+├── package.json
+├── tsconfig.json
+├── tsconfig.test.json
+├── biome.json               # linter / formatter 設定
+├── vitest.config.ts
+├── .clasp.sample.json       # clasp 設定サンプル（.clasp.json にリネームして使用）
+├── .claspignore
 └── src/
-    ├── Config.js            # 設定定数・スクリプトプロパティ取得
-    ├── NotionClient.js      # Notion API クライアント（HTTP リクエスト層）
-    ├── NotionBlocks.js      # ブロックオブジェクトビルダー
-    ├── NotionProperties.js  # プロパティオブジェクトビルダー
-    └── main.js              # エントリポイント（実行サンプル）
+    ├── types.ts             # Notion API 型定義（全ファイル共通）
+    ├── config.ts            # 設定定数・スクリプトプロパティ取得
+    ├── notionClient.ts      # Notion API クライアント（HTTP リクエスト層）
+    ├── notionBlocks.ts      # ブロックオブジェクトビルダー
+    ├── notionProperties.ts  # プロパティオブジェクトビルダー
+    ├── index.ts             # エントリポイント（GAS 関数）
+    └── index.test.ts        # vitest テスト
 ```
 
 ---
@@ -24,120 +33,66 @@ Google Apps Script (GAS) を使って Notion API を操作するスクリプト�
 
 ### 1. Notion Integration の作成
 
-1. [Notion Integrations](https://www.notion.so/my-integrations) にアクセス
-2. 「新しいインテグレーション」を作成し、**Internal Integration Token** を取得する
-3. 操作対象のデータベース/ページをインテグレーションに共有する
+1. [Notion Integrations](https://www.notion.so/my-integrations) で Internal Integration Token を取得する
+2. 操作対象のデータベース/ページをインテグレーションに共有する
 
-### 2. GAS プロジェクトへのデプロイ
-
-[clasp](https://github.com/google/clasp) を使ってデプロイするか、GAS エディタに各ファイルを貼り付けてください。
+### 2. 依存パッケージのインストール
 
 ```bash
-# clasp でのデプロイ例
-clasp create --title "notion-operation-with-gas" --type standalone
-clasp push
+pnpm install
 ```
 
-### 3. スクリプトプロパティの設定
+### 3. clasp の設定
+
+```bash
+# Google にログイン
+clasp login
+
+# 新しい GAS プロジェクトを作成する場合
+clasp create --type standalone "notion-operation-with-gas"
+
+# 既存のプロジェクトに紐付ける場合
+clasp clone YOUR_SCRIPT_ID
+```
+
+`.clasp.sample.json` を `.clasp.json` にコピーし、`scriptId` を設定してください。
+
+### 4. スクリプトプロパティの設定
 
 GAS エディタで「プロジェクトの設定」→「スクリプトプロパティ」に以下を追加してください。
 
-| キー              | 値                                      |
-|-------------------|-----------------------------------------|
-| `NOTION_API_KEY`  | Notion の Internal Integration Token    |
-| `DATABASE_ID`     | 操作対象のデータベース ID               |
-| `TARGET_PAGE_ID`  | 操作対象のページ ID（個別操作時に使用） |
-
-> **ページ/データベース ID の確認方法**
-> Notion でページを開き、URL から確認できます。
-> `https://www.notion.so/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` の `xxx...` 部分が ID です（ハイフンなし 32 文字）。
+| キー              | 値                                   |
+|-------------------|--------------------------------------|
+| `NOTION_API_KEY`  | Notion の Internal Integration Token |
+| `DATABASE_ID`     | 操作対象のデータベース ID            |
+| `TARGET_PAGE_ID`  | 操作対象のページ ID（個別操作時）    |
 
 ---
 
-## 使い方
+## 開発コマンド
 
-### ページのプロパティを更新する
-
-```javascript
-// main.js の updatePageTitleAndStatus() を実行
-// → TARGET_PAGE_ID のページのタイトル・ステータス・期日を更新
-```
-
-### データベースのページを一括更新する
-
-```javascript
-// main.js の bulkUpdateIncompletePages() を実行
-// → DATABASE_ID のデータベースから「未着手」ページを取得して「進行中」に変更
-```
-
-### ページにコンテンツを追記する
-
-```javascript
-// main.js の appendContentToPage() を実行
-// → TARGET_PAGE_ID のページ末尾にブロックを追記
-```
-
-### データベースに新しいページを追加する
-
-```javascript
-// main.js の createNewPageInDatabase() を実行
-// → DATABASE_ID のデータベースに新しいページを作成
-```
+| コマンド             | 内容                              |
+|----------------------|-----------------------------------|
+| `pnpm build`         | TypeScript をコンパイル           |
+| `pnpm watch`         | 変更時に自動ビルド                |
+| `pnpm push`          | ビルドして GAS にプッシュ         |
+| `pnpm test`          | vitest でテスト実行               |
+| `pnpm test:watch`    | テストをウォッチモードで実行      |
+| `pnpm lint`          | biome で lint                     |
+| `pnpm check`         | biome で lint + format            |
+| `pnpm typecheck`     | TypeScript 型チェック             |
 
 ---
 
-## API リファレンス
+## 主要関数
 
-### `NotionClient`
-
-| メソッド                                         | 説明                             |
-|--------------------------------------------------|----------------------------------|
-| `getPage(pageId)`                                | ページを取得                     |
-| `updatePageProperties(pageId, properties)`       | ページのプロパティを更新         |
-| `archivePage(pageId)`                            | ページをアーカイブ               |
-| `unarchivePage(pageId)`                          | ページを復元                     |
-| `getDatabase(databaseId)`                        | データベースを取得               |
-| `queryDatabase(databaseId, filter, sorts)`       | データベースをクエリ             |
-| `createPage(databaseId, properties, children)`   | データベースにページを追加       |
-| `getBlockChildren(blockId)`                      | ブロックの子要素を取得           |
-| `appendBlockChildren(blockId, children)`         | ブロックに子ブロックを追加       |
-| `updateBlock(blockId, block)`                    | ブロックを更新                   |
-| `deleteBlock(blockId)`                           | ブロックを削除                   |
-
-### `NotionProperties`
-
-| メソッド                    | 説明                     |
-|-----------------------------|--------------------------|
-| `title(text)`               | タイトル                 |
-| `richText(text)`            | リッチテキスト           |
-| `number(value)`             | 数値                     |
-| `select(name)`              | セレクト                 |
-| `multiSelect(names)`        | マルチセレクト           |
-| `date(start, end?)`         | 日付                     |
-| `checkbox(checked)`         | チェックボックス         |
-| `url(url)`                  | URL                      |
-| `email(email)`              | メール                   |
-| `phoneNumber(phone)`        | 電話番号                 |
-| `people(userIds)`           | ユーザー                 |
-| `relation(pageIds)`         | リレーション             |
-| `status(name)`              | ステータス               |
-
-### `NotionBlocks`
-
-| メソッド                          | 説明                   |
-|-----------------------------------|------------------------|
-| `paragraph(content)`             | 段落                   |
-| `heading1(content)`              | 見出し1                |
-| `heading2(content)`              | 見出し2                |
-| `heading3(content)`              | 見出し3                |
-| `bulletedListItem(content)`      | 箇条書き               |
-| `numberedListItem(content)`      | 番号付きリスト         |
-| `toDo(content, checked?)`        | チェックボックス       |
-| `toggle(content, children?)`     | トグル                 |
-| `code(code, language?)`          | コードブロック         |
-| `divider()`                      | 区切り線               |
-| `quote(content)`                 | 引用                   |
-| `callout(content, emoji?)`       | コールアウト           |
+| 関数名                      | 説明                                         |
+|-----------------------------|----------------------------------------------|
+| `updatePageTitleAndStatus`  | ページのタイトル・ステータス・期日を更新     |
+| `bulkUpdateIncompletePages` | DB内の「未着手」ページを「進行中」に一括更新 |
+| `appendContentToPage`       | ページ末尾にブロックコンテンツを追記         |
+| `createNewPageInDatabase`   | データベースに新しいページを追加             |
+| `listPageBlocks`            | ページのブロック一覧をログに出力             |
 
 ---
 
@@ -145,3 +100,4 @@ GAS エディタで「プロジェクトの設定」→「スクリプトプロ�
 
 - [Notion API ドキュメント](https://developers.notion.com/)
 - [Google Apps Script リファレンス](https://developers.google.com/apps-script)
+- [clasp](https://github.com/google/clasp)

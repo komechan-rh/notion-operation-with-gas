@@ -1,11 +1,11 @@
 /**
  * Notion ブロックビルダー
  *
- * Notion API に渡すブロックオブジェクトを簡単に生成するためのユーティリティ。
- * appendBlockChildren() の children 引数に渡す配列の要素として使用する。
+ * appendBlockChildren() の children 引数に渡すブロックオブジェクトを
+ * 簡単に生成するためのユーティリティ。
  *
  * 使用例:
- *   const blocks = [
+ *   const blocks: NotionBlock[] = [
  *     NotionBlocks.heading1("見出し1"),
  *     NotionBlocks.paragraph("本文テキスト"),
  *     NotionBlocks.bulletedListItem("箇条書き"),
@@ -13,33 +13,35 @@
  *   client.appendBlockChildren(pageId, blocks);
  */
 
-const NotionBlocks = {
-  // ---------------------------------------------------------------------------
-  // テキストヘルパー
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Private helper（GAS グローバルスコープから隠すため関数名に _ プレフィックス）
+// ---------------------------------------------------------------------------
 
+function _toRichTextArray(content: string | RichTextObject[]): RichTextObject[] {
+  if (typeof content === "string") {
+    return [{ type: "text", text: { content } }];
+  }
+  return content;
+}
+
+// ---------------------------------------------------------------------------
+// ブロックビルダー
+// ---------------------------------------------------------------------------
+
+const NotionBlocks = {
   /**
    * リッチテキストオブジェクトを生成する。
-   * @param {string} text      - テキスト内容
-   * @param {Object} [annotations] - アノテーション（bold, italic, color など）
-   * @returns {Object}
    */
-  richText(text, annotations) {
-    const rt = { type: "text", text: { content: text } };
+  richText(text: string, annotations?: RichTextAnnotations): RichTextObject {
+    const rt: RichTextObject = { type: "text", text: { content: text } };
     if (annotations) rt.annotations = annotations;
     return rt;
   },
 
-  // ---------------------------------------------------------------------------
-  // ブロックビルダー
-  // ---------------------------------------------------------------------------
-
   /**
    * 段落ブロックを生成する。
-   * @param {string|Array} content - テキスト文字列 または richText オブジェクトの配列
-   * @returns {Object}
    */
-  paragraph(content) {
+  paragraph(content: string | RichTextObject[]): ParagraphBlock {
     return {
       object: "block",
       type: "paragraph",
@@ -49,10 +51,8 @@ const NotionBlocks = {
 
   /**
    * 見出し1ブロックを生成する。
-   * @param {string|Array} content
-   * @returns {Object}
    */
-  heading1(content) {
+  heading1(content: string | RichTextObject[]): Heading1Block {
     return {
       object: "block",
       type: "heading_1",
@@ -62,10 +62,8 @@ const NotionBlocks = {
 
   /**
    * 見出し2ブロックを生成する。
-   * @param {string|Array} content
-   * @returns {Object}
    */
-  heading2(content) {
+  heading2(content: string | RichTextObject[]): Heading2Block {
     return {
       object: "block",
       type: "heading_2",
@@ -75,10 +73,8 @@ const NotionBlocks = {
 
   /**
    * 見出し3ブロックを生成する。
-   * @param {string|Array} content
-   * @returns {Object}
    */
-  heading3(content) {
+  heading3(content: string | RichTextObject[]): Heading3Block {
     return {
       object: "block",
       type: "heading_3",
@@ -88,10 +84,8 @@ const NotionBlocks = {
 
   /**
    * 箇条書きリストアイテムブロックを生成する。
-   * @param {string|Array} content
-   * @returns {Object}
    */
-  bulletedListItem(content) {
+  bulletedListItem(content: string | RichTextObject[]): BulletedListItemBlock {
     return {
       object: "block",
       type: "bulleted_list_item",
@@ -101,10 +95,8 @@ const NotionBlocks = {
 
   /**
    * 番号付きリストアイテムブロックを生成する。
-   * @param {string|Array} content
-   * @returns {Object}
    */
-  numberedListItem(content) {
+  numberedListItem(content: string | RichTextObject[]): NumberedListItemBlock {
     return {
       object: "block",
       type: "numbered_list_item",
@@ -114,11 +106,8 @@ const NotionBlocks = {
 
   /**
    * チェックボックス（To-do）ブロックを生成する。
-   * @param {string|Array} content
-   * @param {boolean} [checked=false]
-   * @returns {Object}
    */
-  toDo(content, checked = false) {
+  toDo(content: string | RichTextObject[], checked = false): ToDoBlock {
     return {
       object: "block",
       type: "to_do",
@@ -128,12 +117,9 @@ const NotionBlocks = {
 
   /**
    * トグルブロックを生成する。
-   * @param {string|Array} content
-   * @param {Array}        [children] - トグル内の子ブロック配列（省略可）
-   * @returns {Object}
    */
-  toggle(content, children) {
-    const block = {
+  toggle(content: string | RichTextObject[], children?: NotionBlock[]): ToggleBlock {
+    const block: ToggleBlock = {
       object: "block",
       type: "toggle",
       toggle: { rich_text: _toRichTextArray(content) },
@@ -144,11 +130,8 @@ const NotionBlocks = {
 
   /**
    * コードブロックを生成する。
-   * @param {string} code     - コード内容
-   * @param {string} [language="plain text"] - 言語
-   * @returns {Object}
    */
-  code(code, language = "plain text") {
+  code(code: string, language = "plain text"): CodeBlock {
     return {
       object: "block",
       type: "code",
@@ -161,18 +144,15 @@ const NotionBlocks = {
 
   /**
    * 区切り線ブロックを生成する。
-   * @returns {Object}
    */
-  divider() {
+  divider(): DividerBlock {
     return { object: "block", type: "divider", divider: {} };
   },
 
   /**
    * 引用ブロックを生成する。
-   * @param {string|Array} content
-   * @returns {Object}
    */
-  quote(content) {
+  quote(content: string | RichTextObject[]): QuoteBlock {
     return {
       object: "block",
       type: "quote",
@@ -182,11 +162,8 @@ const NotionBlocks = {
 
   /**
    * コールアウトブロックを生成する。
-   * @param {string|Array} content
-   * @param {string} [emoji="💡"] - アイコン絵文字
-   * @returns {Object}
    */
-  callout(content, emoji = "💡") {
+  callout(content: string | RichTextObject[], emoji = "💡"): CalloutBlock {
     return {
       object: "block",
       type: "callout",
@@ -197,19 +174,3 @@ const NotionBlocks = {
     };
   },
 };
-
-// ---------------------------------------------------------------------------
-// Private helper
-// ---------------------------------------------------------------------------
-
-/**
- * 文字列または richText 配列を統一された richText 配列に変換する。
- * @param {string|Array} content
- * @returns {Array}
- */
-function _toRichTextArray(content) {
-  if (typeof content === "string") {
-    return [{ type: "text", text: { content } }];
-  }
-  return content;
-}
