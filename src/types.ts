@@ -262,3 +262,29 @@ type Sort = PropertySort | TimestampSort;
 
 // filter の型は複雑なため、実用上は unknown で受ける
 type Filter = unknown;
+
+// ---------------------------------------------------------------------------
+// Web サーバー
+// ---------------------------------------------------------------------------
+
+/** JSON レスポンスの共通形式 */
+interface ApiResponse<T = unknown> {
+  ok: boolean;
+  data?: T;
+  error?: string;
+}
+
+/** ルートハンドラーの型 */
+type RouteHandler<E> = (event: E) => GoogleAppsScript.Content.TextOutput;
+
+/** GET ルートマップ */
+type GetRouteMap = Record<string, RouteHandler<GoogleAppsScript.Events.DoGet>>;
+
+/** POST ルートマップ */
+type PostRouteMap = Record<string, RouteHandler<GoogleAppsScript.Events.DoPost>>;
+
+/** POST リクエストボディの基本型 */
+interface PostBody {
+  action?: string;
+  [key: string]: unknown;
+}

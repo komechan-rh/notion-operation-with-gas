@@ -3,7 +3,43 @@
  *
  * GAS のトリガーや手動実行からの呼び出しはここに記述する。
  * 各関数はそのまま GAS エディタの「実行」ボタンや時間トリガーで動作する。
+ *
+ * --- Web アプリとして公開する場合 ---
+ * GAS エディタで「デプロイ」→「新しいデプロイ」→「ウェブアプリ」を選択し、
+ * 「アクセスできるユーザー」を適切に設定してください。
  */
+
+// ---------------------------------------------------------------------------
+// Web アプリ エントリポイント（doGet / doPost）
+// ---------------------------------------------------------------------------
+
+/**
+ * HTTP GET リクエストを処理する。
+ *
+ * クエリパラメータ `action` でルートを指定する。
+ *
+ * 例:
+ *   GET <url>?action=getPage&pageId=<id>
+ *   GET <url>?action=getBlocks&pageId=<id>
+ *   GET <url>?action=queryDatabase
+ */
+function doGet(e: GoogleAppsScript.Events.DoGet): GoogleAppsScript.Content.TextOutput {
+  return WebServer.handleGet(e, getRoutes);
+}
+
+/**
+ * HTTP POST リクエストを処理する。
+ *
+ * リクエストボディ（JSON）の `action` フィールドでルートを指定する。
+ *
+ * 例:
+ *   POST <url>  body: {"action":"updatePage","pageId":"<id>","properties":{...}}
+ *   POST <url>  body: {"action":"createPage","properties":{...},"children":[...]}
+ *   POST <url>  body: {"action":"appendBlocks","pageId":"<id>","blocks":[...]}
+ */
+function doPost(e: GoogleAppsScript.Events.DoPost): GoogleAppsScript.Content.TextOutput {
+  return WebServer.handlePost(e, postRoutes);
+}
 
 // ---------------------------------------------------------------------------
 // ユーティリティ
